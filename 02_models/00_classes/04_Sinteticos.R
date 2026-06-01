@@ -1,6 +1,6 @@
 # ============================================================
 # 04_Sinteticos.R
-# Datos sintéticos — generación y modelos
+# Datos sintéticos - generación y modelos
 # ============================================================
 #
 # Tópicos de IA · Universidad de los Andes · 2026-10
@@ -13,18 +13,27 @@ dir_modelo <- here(paths$submissions, TIPO)
 dir.create(dir_modelo, recursive = TRUE, showWarnings = FALSE)
 
 cat("\n─────────────────────────────────────────────────────────\n")
-cat("  Datos sintéticos — generación y modelos\n")
+cat("  Datos sintéticos - generación y modelos\n")
 cat("─────────────────────────────────────────────────────────\n")
 
-# --- Cargar top-8 -------------------------------------------
-top8_vars  <- readRDS(here(paths$processed, "top8_vars.rds"))
+# --- Cargar top ---------------------------------------------
+top_vars   <- readRDS(here(paths$processed, "top_vars.rds"))
 train_real <- readRDS(here(paths$processed, "train_min.rds"))
 
-cat("\n>>> Variables top-8 a simular:\n")
-cat("   ", paste(top8_vars, collapse = ", "), "\n")
+MIN_ENG_VARS <- c(
+  "ratio_dependencia",
+  "hacinamiento",
+  "nper_sq",
+  "edad_prom_sq",
+  "calidad_empleo",
+  "doble_proteccion"
+)
+
+cat("\n>>> Variables top a simular:\n")
+cat("   ", paste(top_vars, collapse = ", "), "\n")
 
 # ============================================================
-# PASO 1 — Generar datos sintéticos
+# PASO 1 - Generar datos sintéticos
 # ============================================================
 
 cat("\n>>> [1/3] Generando dataset sintético...\n")
@@ -52,6 +61,7 @@ prop_mujeres        <- pmin(1, pmax(0, rnorm(N_SINT, 0.51, 0.18)))
 jefe_mujer          <- rbinom(N_SINT, 1, prob = 0.38)
 edad_jefe           <- pmax(18, pmin(90, round(rnorm(N_SINT, 45, 14))))
 edad_promedio       <- pmax(5,  pmin(80, round(rnorm(N_SINT, 32, 12))))
+edad_min            <- pmax(1, pmin(edad_promedio, round(rnorm(N_SINT, 12, 8))))
 n_mayores_65        <- rbinom(N_SINT, 1, prob = 0.18)
 prop_cotiza_pension <- pmin(1, pmax(0, rnorm(N_SINT, 0.38, 0.30)))
 prop_afiliado_salud <- pmin(1, pmax(0, rnorm(N_SINT, 0.72, 0.25)))
@@ -59,15 +69,21 @@ horas_trabajo_prom  <- pmax(0, rnorm(N_SINT, 42, 15)) * ocup_jefe
 clase               <- factor(sample(c("1", "2"), N_SINT,
                                      replace = TRUE,
                                      prob    = c(0.78, 0.22)))
+prop_reg_subsidiado <- pmin(1, pmax(0, rnorm(N_SINT, 0.25, 0.22)))
+p5090               <- factor(sample(c(1, 2, 3, 4), N_SINT,
+                                     replace = TRUE,
+                                     prob = c(0.60, 0.24, 0.12, 0.04)))
+depto               <- factor(sample(levels(train_real$depto), N_SINT, replace = TRUE))
 
 # --- Features engineered ------------------------------------
 sint_df <- data.frame(
-  nper, p5000, p5010, tasa_ocupacion, n_ocupados,
-  n_pet, n_inactivos, educ_jefe, ocup_jefe,
+  prop_reg_subsidiado, nper, n_ocupados, p5000, p5090,
+  horas_trabajo_prom, n_menores_18 = pmax(0, round(rnorm(N_SINT, 1.3, 1.4))),
+  edad_promedio, prop_cotiza_pension, depto, edad_min,
+  tasa_ocupacion, n_pet, n_inactivos, educ_jefe, ocup_jefe,
   nivel_educ_max, prop_mujeres, jefe_mujer,
-  edad_jefe, edad_promedio, n_mayores_65,
-  prop_cotiza_pension, prop_afiliado_salud,
-  horas_trabajo_prom, clase
+  edad_jefe, n_mayores_65, prop_afiliado_salud,
+  p5010, clase
 ) |>
   mutate(
     ratio_dependencia    = (nper - n_ocupados) / pmax(nper, 1),
@@ -110,11 +126,13 @@ pobre_sint <- rbinom(N_SINT, 1, prob = prob_pobre)
 cat(sprintf("    Hogares: %d | Tasa pobreza simulada: %.1f%%\n",
             N_SINT, mean(pobre_sint) * 100))
 
-# Quedarse solo con top-8 + id + pobre
+# Quedarse solo con las variables mínimas + id + pobre
 sint_df <- sint_df |>
-  select(any_of(top8_vars)) |>
-  mutate(id    = paste0("SINT_", seq_len(N_SINT)),
-         pobre = pobre_sint) |>
+  select(any_of(c(top_vars, MIN_ENG_VARS))) |>
+  mutate(
+    id    = paste0("SINT_", seq_len(N_SINT)),
+    pobre = pobre_sint
+  ) |>
   select(id, pobre, everything())
 
 # Split 80/20
@@ -130,7 +148,7 @@ cat("    sint_train:", nrow(sint_train), "x", ncol(sint_train), "\n")
 cat("    sint_test: ", nrow(sint_test),  "x", ncol(sint_test),  "\n")
 
 # ============================================================
-# PASO 2 — Modelos sobre datos sintéticos
+# PASO 2 - Modelos sobre datos sintéticos
 # ============================================================
 
 cat("\n>>> [2/3] Entrenando modelos sobre datos sintéticos...\n")
@@ -163,10 +181,10 @@ m_logit <- train(
 )
 
 opt_logit <- optimizar_threshold(m_logit, sint_train, sint_train$pobre)
-nombre_l  <- "logit_sintetico_top8"
+nombre_l  <- "logit_sintetico_top"
 guardar_modelo(m_logit, nombre_l, TIPO, dir_modelo,
                opt_logit$threshold, opt_logit$f1)
-cat(sprintf("    Logit sint — F1: %.4f | Threshold: %.3f\n",
+cat(sprintf("    Logit sint - F1: %.4f | Threshold: %.3f\n",
             opt_logit$f1, opt_logit$threshold))
 toc()
 
@@ -175,7 +193,7 @@ cat("\n    [2b] Random Forest sintético...\n")
 tic("RF sint")
 set.seed(SEED)
 
-p_sint    <- length(top8_vars)
+p_sint    <- length(setdiff(names(sint_train), c("id", "pobre")))
 mtry_sint <- max(1, floor(sqrt(p_sint)))
 
 m_rf <- ranger(
@@ -192,10 +210,10 @@ m_rf <- ranger(
 )
 
 opt_rf   <- optimizar_threshold(m_rf, NULL, sint_train$pobre)
-nombre_r <- "rf_sintetico_top8"
+nombre_r <- "rf_sintetico_top"
 guardar_modelo(m_rf, nombre_r, TIPO, dir_modelo,
                opt_rf$threshold, opt_rf$f1)
-cat(sprintf("    RF sint — OOB F1: %.4f | Threshold: %.3f\n",
+cat(sprintf("    RF sint - OOB F1: %.4f | Threshold: %.3f\n",
             opt_rf$f1, opt_rf$threshold))
 toc()
 
@@ -274,15 +292,15 @@ m_xgb <- xgb.train(
   verbose = 0
 )
 
-nombre_x <- "xgb_sintetico_top8"
+nombre_x <- "xgb_sintetico_top"
 guardar_modelo(m_xgb, nombre_x, TIPO, dir_modelo,
                opt_xgb$threshold, opt_xgb$f1)
-cat(sprintf("    XGB sint — OOF F1: %.4f | Threshold: %.3f\n",
+cat(sprintf("    XGB sint - OOF F1: %.4f | Threshold: %.3f\n",
             opt_xgb$f1, opt_xgb$threshold))
 toc()
 
 # ============================================================
-# PASO 3 — Guardar resultados
+# PASO 3 - Guardar resultados
 # ============================================================
 
 cat("\n>>> [3/3] Guardando resultados sintéticos...\n")
@@ -304,13 +322,13 @@ cat("\n>>> Resumen modelos sintéticos:\n")
 print(resultados_sint)
 
 # --- Limpiar entorno ----------------------------------------
-rm(sint_df, sint_train, sint_test, top8_vars, train_real,
+rm(sint_df, sint_train, sint_test, top_vars, train_real,
    nper, p5000, p5010, tasa_ocupacion, n_ocupados,
    n_pet, n_inactivos, educ_jefe, ocup_jefe, nivel_educ_max,
    prop_mujeres, jefe_mujer, edad_jefe, edad_promedio,
-   n_mayores_65, prop_cotiza_pension, prop_afiliado_salud,
-   horas_trabajo_prom, clase, logit_score, prob_pobre,
-   pobre_sint, idx_train, ctrl,
+   edad_min, n_mayores_65, prop_cotiza_pension, prop_afiliado_salud,
+   horas_trabajo_prom, clase, prop_reg_subsidiado, p5090, depto,
+   logit_score, prob_pobre, pobre_sint, idx_train, ctrl,
    dummy_sint, X_sint, y_sint, dtrain_sint, params_sint,
    folds_sint, oof_sint, idx_val_sint, thresh_sint, f1_sint,
    m_logit, m_rf, m_xgb,
@@ -318,7 +336,7 @@ rm(sint_df, sint_train, sint_test, top8_vars, train_real,
    nombre_l, nombre_r, nombre_x,
    p_sint, mtry_sint, resultados_sint,
    k, val_idx, tr_idx,
-   dir_modelo, TIPO, N_SINT)
+   dir_modelo, TIPO, N_SINT, MIN_ENG_VARS)
 gc()
 
 cat("\n>>> 04_Sinteticos.R completado\n")

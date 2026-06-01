@@ -1,6 +1,6 @@
 # ============================================================
 # 01_Logit.R
-# Regresión Logística — encuesta mínima (top-8 variables)
+# Regresión Logística — encuesta mínima (top variables)
 # ============================================================
 #
 # Tópicos de IA · Universidad de los Andes · 2026-10
@@ -13,7 +13,7 @@ dir_modelo <- here(paths$submissions, TIPO)
 dir.create(dir_modelo, recursive = TRUE, showWarnings = FALSE)
 
 cat("\n─────────────────────────────────────────────────────────\n")
-cat("  Logit — datos reales (top-8)\n")
+cat("  Logit — datos reales (top)\n")
 cat("─────────────────────────────────────────────────────────\n")
 
 # --- Cargar datos -------------------------------------------
@@ -50,7 +50,7 @@ m1 <- train(
 )
 
 opt1    <- optimizar_threshold(m1, train_min, train_min$pobre)
-nombre1 <- "logit_baseline_top8"
+nombre1 <- "logit_baseline_top"
 guardar_modelo(m1, nombre1, TIPO, dir_modelo, opt1$threshold, opt1$f1)
 generar_submission(m1, test_min, opt1$threshold, TIPO, nombre1)
 cat(sprintf("    F1: %.4f | Threshold: %.3f\n", opt1$f1, opt1$threshold))
@@ -74,7 +74,7 @@ m2 <- train(
 )
 
 opt2    <- optimizar_threshold(m2, train_min, train_min$pobre)
-nombre2 <- "logit_scaled_top8"
+nombre2 <- "logit_scaled_top"
 guardar_modelo(m2, nombre2, TIPO, dir_modelo, opt2$threshold, opt2$f1)
 generar_submission(m2, test_min, opt2$threshold, TIPO, nombre2)
 cat(sprintf("    F1: %.4f | Threshold: %.3f\n", opt2$f1, opt2$threshold))

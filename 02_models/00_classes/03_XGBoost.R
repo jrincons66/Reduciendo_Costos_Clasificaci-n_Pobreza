@@ -1,6 +1,6 @@
 # ============================================================
 # 03_XGBoost.R
-# XGBoost — encuesta mínima (top-8 variables)
+# XGBoost — encuesta mínima (top variables)
 # ============================================================
 #
 # Tópicos de IA · Universidad de los Andes · 2026-10
@@ -13,7 +13,7 @@ dir_modelo <- here(paths$submissions, TIPO)
 dir.create(dir_modelo, recursive = TRUE, showWarnings = FALSE)
 
 cat("\n─────────────────────────────────────────────────────────\n")
-cat("  XGBoost — datos reales (top-8)\n")
+cat("  XGBoost — datos reales (top)\n")
 cat("─────────────────────────────────────────────────────────\n")
 
 # --- Cargar datos -------------------------------------------
@@ -131,7 +131,7 @@ m1 <- xgb.train(
 
 opt1    <- list(threshold = best_grid$threshold, f1 = best_grid$f1)
 nombre1 <- paste0("XGB_grid_depth_", best_grid$params$max_depth,
-                  "_eta_",           best_grid$params$eta, "_top8")
+                  "_eta_",           best_grid$params$eta, "_top")
 guardar_modelo(m1, nombre1, TIPO, dir_modelo, opt1$threshold, opt1$f1)
 
 probs1 <- predict(m1, dtest)
@@ -191,7 +191,7 @@ for (k in seq_along(folds)) {
   rm(fold_m, d_tr_k, d_val_k)
 }
 
-saveRDS(oof_preds, file.path(dir_modelo, "xgb_oof_preds_top8.rds"))
+saveRDS(oof_preds, file.path(dir_modelo, "xgb_oof_preds_top.rds"))
 
 # --- Modelo final con early stopping ------------------------
 set.seed(SEED)
@@ -231,7 +231,7 @@ opt2 <- list(
 cat(sprintf("    Threshold OOF: %.3f | F1 OOF: %.4f\n",
             opt2$threshold, opt2$f1))
 
-nombre2 <- "XGB_nativo_early_stop_top8"
+nombre2 <- "XGB_nativo_early_stop_top"
 guardar_modelo(m2, nombre2, TIPO, dir_modelo,
                opt2$threshold, opt2$f1)
 
@@ -255,7 +255,7 @@ p_imp_xgb <- imp_xgb |>
   geom_col(fill = "#C8972B", width = 0.7) +
   coord_flip() +
   labs(
-    title   = "Importancia XGBoost — encuesta mínima (top-8)",
+    title   = "Importancia XGBoost — encuesta mínima",
     x       = NULL,
     y       = "Gain",
     caption = "Fuente: DANE MESE 2018, Bogotá"
@@ -265,7 +265,7 @@ p_imp_xgb <- imp_xgb |>
     plot.title = element_text(face = "bold", color = "#1B3A6B")
   )
 
-ggsave(here(paths$figures, "xgb_importancia_top8.png"),
+ggsave(here(paths$figures, "xgb_importancia_top.png"),
        plot = p_imp_xgb, width = 7, height = 4, dpi = 150)
 
 toc()

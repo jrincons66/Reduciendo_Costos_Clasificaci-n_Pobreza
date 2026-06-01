@@ -21,8 +21,8 @@
 # Pipeline:
 #   [1] Limpieza y exclusión de leakage
 #   [2] Feature engineering (18 variables proxy)
-#   [3] Selección top-8 por importancia XGBoost
-#   [4] Modelos con top-8 — datos reales
+#   [3] Selección top variables por importancia XGBoost
+#   [4] Modelos con top — datos reales
 #   [5] Datos sintéticos + mismos modelos
 #   [6] Comparativa final
 #
@@ -134,7 +134,7 @@ toc(log = TRUE)
 
 # --- [3] Selección top-8 ------------------------------------
 cat("\n─────────────────────────────────────────────────────────\n")
-cat("  [3/6] Selección top-8 por importancia XGBoost\n")
+cat("  [3/6] Selección top por importancia XGBoost\n")
 cat("─────────────────────────────────────────────────────────\n")
 tic("Top-8")
 source(here(paths$feat, "00_features_min.R"))
@@ -142,7 +142,7 @@ toc(log = TRUE)
 
 # --- [4] Modelos datos reales -------------------------------
 cat("\n─────────────────────────────────────────────────────────\n")
-cat("  [4/6] Modelos con top-8 — datos reales\n")
+cat("  [4/6] Modelos con top variables — datos reales\n")
 cat("        Logit · Random Forest · XGBoost\n")
 cat("─────────────────────────────────────────────────────────\n")
 tic("Modelos reales")

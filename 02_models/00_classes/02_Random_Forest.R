@@ -1,6 +1,6 @@
 # ============================================================
 # 02_RandomForest.R
-# Random Forest — encuesta mínima (top-8 variables)
+# Random Forest — encuesta mínima (top variables)
 # ============================================================
 #
 # Tópicos de IA · Universidad de los Andes · 2026-10
@@ -13,7 +13,7 @@ dir_modelo <- here(paths$submissions, TIPO)
 dir.create(dir_modelo, recursive = TRUE, showWarnings = FALSE)
 
 cat("\n─────────────────────────────────────────────────────────\n")
-cat("  Random Forest — datos reales (top-8)\n")
+cat("  Random Forest — datos reales (top)\n")
 cat("─────────────────────────────────────────────────────────\n")
 
 # --- Cargar datos -------------------------------------------
@@ -48,7 +48,7 @@ m1 <- ranger(
 )
 
 opt1    <- optimizar_threshold(m1, NULL, train_min$pobre)
-nombre1 <- paste0("RF_default_mtry_", mtry_def, "_top8")
+nombre1 <- paste0("RF_default_mtry_", mtry_def, "_top")
 guardar_modelo(m1, nombre1, TIPO, dir_modelo, opt1$threshold, opt1$f1)
 generar_submission(m1, test_min, opt1$threshold, TIPO, nombre1)
 cat(sprintf("    OOB F1: %.4f | Threshold: %.3f | Brier: %.4f\n",
@@ -98,7 +98,7 @@ best2 <- resultados_grid[[which.max(f1s)]]
 nombre2 <- paste0("RF_grid_",
                   best2$model$splitrule, "_mtry_",
                   best2$model$mtry,     "_node_",
-                  best2$model$min.node.size, "_top8")
+                  best2$model$min.node.size, "_top")
 guardar_modelo(best2$model, nombre2, TIPO, dir_modelo,
                best2$opt$threshold, best2$opt$f1)
 generar_submission(best2$model, test_min,
@@ -128,7 +128,7 @@ m3 <- ranger(
 )
 
 opt3    <- optimizar_threshold(m3, NULL, train_min$pobre)
-nombre3 <- "RF_hellinger_bagging_top8"
+nombre3 <- "RF_hellinger_bagging_top"
 guardar_modelo(m3, nombre3, TIPO, dir_modelo, opt3$threshold, opt3$f1)
 generar_submission(m3, test_min, opt3$threshold, TIPO, nombre3)
 cat(sprintf("    OOB F1: %.4f | Threshold: %.3f | Brier: %.4f\n",
@@ -152,7 +152,7 @@ read.csv(here(paths$models, "log.csv")) |>
   arrange(desc(cv_f1)) |>
   print()
 
-# Guardar mejor resultado para comparativa
+# Guardar mejor resultado/ para comparativa
 todos_f1  <- c(opt1$f1, best2$opt$f1, opt3$f1)
 mejor_idx <- which.max(todos_f1)
 

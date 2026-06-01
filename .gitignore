@@ -1,0 +1,8 @@
+00_data/
+02_models/01_submissions/
+04_outputs/
+*.rds
+*.csv
+!02_models/log.csv
+!02_models/top8_importancia.csv
+.Rproj.user/

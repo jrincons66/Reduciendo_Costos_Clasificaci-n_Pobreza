@@ -88,6 +88,11 @@ imp_agregada <- imp_raw |>
   summarise(Gain_total = sum(Gain), .groups = "drop") |>
   arrange(desc(Gain_total))
 
+imp_agregada <- imp_agregada |>
+  mutate(
+    gain_gap = lag(Gain_total) - Gain_total
+  )
+
 top8_vars <- imp_agregada$var_base[1:TOP_N]
 
 cat("\n>>> Top-8 variables seleccionadas:\n")

@@ -164,6 +164,35 @@ write.csv(
 )
 
 # ============================================================
+# TABLA TOP 20 DEL RANKING COMPLETO
+# ============================================================
+
+tabla_top20 <- imp_agregada |>
+  slice_head(n = 20) |>
+  mutate(
+    tipo = ifelse(var_base %in% MIN_ENG_VARS,
+                  "Feature derivada",
+                  "Variable raw"),
+    gain_gap = lag(Gain_total) - Gain_total,
+    gain_acum = cumsum(Gain_total),
+    gain_acum_pct_subset = 100 * gain_acum / sum(Gain_total),
+    gain_pct_full = 100 * Gain_total / sum(imp_agregada$Gain_total)
+  )
+
+write.csv(
+  tabla_top20,
+  here(paths$tables, "top20_importancia.csv"),
+  row.names = FALSE
+)
+
+guardar_tabla_tex(
+  tabla_top20,
+  "top20_importancia.tex",
+  caption = "Top 20 variables por importancia del XGBoost completo",
+  label = "tab:top20_importancia"
+)
+
+# ============================================================
 # PASO 3 — Construir dataset mínimo
 # ============================================================
 

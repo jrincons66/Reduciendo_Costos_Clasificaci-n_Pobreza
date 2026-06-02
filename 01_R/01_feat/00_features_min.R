@@ -3,10 +3,6 @@
 # Encuesta mínima — selección top por importancia XGBoost
 # ============================================================
 #
-# Tópicos de IA · Universidad de los Andes · 2026-10
-# Profesor: Álvaro Riascos
-# Autores: Jose Rincón · Lucas Rodríguez · María Paula Osuna
-#
 # Descripción:
 #   Entrena un XGBoost sobre el dataset completo (18 features),
 #   extrae la importancia por Gain, selecciona las 11 variables
@@ -42,6 +38,29 @@ train_full <- train_full |>
     pobre = factor(pobre, levels = c(0, 1),
                    labels = c("no_pobre", "pobre"))
   )
+
+library(kableExtra)
+library(knitr)
+
+guardar_tabla_tex <- function(df, nombre_archivo, caption = NULL, label = NULL) {
+  
+  kbl(
+    df,
+    format = "latex",
+    booktabs = TRUE,
+    longtable = FALSE,
+    caption = caption,
+    label = label,
+    digits = 4
+  ) |>
+    kable_styling(
+      latex_options = c("hold_position")
+    ) |>
+    save_kable(
+      file = here(paths$tables, nombre_archivo)
+    )
+}
+
 
 # ============================================================
 # PASO 1 — Entrenar XGBoost completo para importancia
@@ -537,6 +556,55 @@ write.csv(
   here(paths$tables, "resumen_modelos_importancia.csv"),
   row.names = FALSE
 )
+
+
+# ============================================================
+# EXPORTAR TABLAS LATEX
+# ============================================================
+
+guardar_tabla_tex(
+  imp_top15,
+  "top15_importancia.tex",
+  caption = "Top 15 variables por importancia XGBoost",
+  label = "tab:top15_importancia"
+)
+
+guardar_tabla_tex(
+  imp_17,
+  "top17_importancia.tex",
+  caption = "Variables del modelo mínimo completo",
+  label = "tab:top17_importancia"
+)
+
+guardar_tabla_tex(
+  imp_min,
+  "min_importancia.tex",
+  caption = "Importancia de las 11 variables raw seleccionadas",
+  label = "tab:min_importancia"
+)
+
+guardar_tabla_tex(
+  tabla_cortes,
+  "cortes_gain.tex",
+  caption = "Cobertura acumulada del gain",
+  label = "tab:cortes_gain"
+)
+
+guardar_tabla_tex(
+  tabla_cobertura,
+  "cobertura_gain.tex",
+  caption = "Cobertura del gain por conjunto de variables",
+  label = "tab:cobertura_gain"
+)
+
+guardar_tabla_tex(
+  resumen_modelos_importancia,
+  "resumen_modelos_importancia.tex",
+  caption = "Resumen de los conjuntos de variables",
+  label = "tab:resumen_modelos_importancia"
+)
+
+cat(">>> Tablas LaTeX exportadas\n")
 
 # ============================================================
 # Guardar resumen de la base mínima
